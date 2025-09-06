@@ -52,8 +52,8 @@ export class MemStorage implements IStorage {
         latitude: 13.0542,
         longitude: 80.2825,
         location: '13.0542, 80.2825',
-        imageUrl: undefined,
-        audioUrl: undefined,
+        imageUrl: null,
+        audioUrl: null,
         createdAt: new Date(Date.now() - 3600000), // 1 hour ago
       },
       {
@@ -63,8 +63,8 @@ export class MemStorage implements IStorage {
         latitude: 13.2846,
         longitude: 80.3371,
         location: '13.2846, 80.3371',
-        imageUrl: undefined,
-        audioUrl: undefined,
+        imageUrl: null,
+        audioUrl: null,
         createdAt: new Date(Date.now() - 7200000), // 2 hours ago
       },
       {
@@ -74,8 +74,8 @@ export class MemStorage implements IStorage {
         latitude: 13.0067,
         longitude: 80.2669,
         location: '13.0067, 80.2669',
-        imageUrl: undefined,
-        audioUrl: undefined,
+        imageUrl: null,
+        audioUrl: null,
         createdAt: new Date(Date.now() - 10800000), // 3 hours ago
       }
     ];
@@ -109,6 +109,9 @@ export class MemStorage implements IStorage {
     const hazardReport: HazardReport = {
       ...report,
       id,
+      imageUrl: report.imageUrl || null,
+      audioUrl: report.audioUrl || null,
+      location: report.location || null,
       createdAt: new Date()
     };
     this.hazardReports.set(id, hazardReport);
