@@ -53,13 +53,22 @@ export function FeedTab() {
   const handleVerifyReport = (reportId: string) => {
     setVerifiedReports(prev => {
       const newSet = new Set(prev);
-      if (newSet.has(reportId)) {
+      const wasVerified = newSet.has(reportId);
+      if (wasVerified) {
         newSet.delete(reportId);
-        toast({ title: "Verification removed", description: "Report verification removed." });
       } else {
         newSet.add(reportId);
-        toast({ title: "Report verified", description: "Thank you for verifying this report!" });
       }
+      
+      // Use setTimeout to avoid calling toast during render
+      setTimeout(() => {
+        if (wasVerified) {
+          toast({ title: "Verification removed", description: "Report verification removed." });
+        } else {
+          toast({ title: "Report verified", description: "Thank you for verifying this report!" });
+        }
+      }, 0);
+      
       return newSet;
     });
   };
@@ -73,7 +82,9 @@ export function FeedTab() {
       });
     } else {
       navigator.clipboard.writeText(`Ocean Hazard: ${description} - ${window.location.href}`);
-      toast({ title: "Link copied", description: "Report link copied to clipboard!" });
+      setTimeout(() => {
+        toast({ title: "Link copied", description: "Report link copied to clipboard!" });
+      }, 0);
     }
   };
 
