@@ -50,7 +50,7 @@ export function MainApp({ user, onLogout }: MainAppProps) {
   const renderActiveTab = () => {
     switch (activeTab) {
       case "feed":
-        return <FeedTab />;
+        return <FeedTab user={user} showMyReports={showMyReports} />;
       case "report":
         return <ReportTab user={user} />;
       case "dashboard":
@@ -58,7 +58,7 @@ export function MainApp({ user, onLogout }: MainAppProps) {
       case "map":
         return <MapTab />;
       default:
-        return <FeedTab />;
+        return <FeedTab user={user} showMyReports={showMyReports} />;
     }
   };
 
