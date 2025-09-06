@@ -129,7 +129,7 @@ export function MainApp({ user, onLogout }: MainAppProps) {
                   Sign out
                 </DropdownMenuItem>
               </DropdownMenuContent>
-            </DropdownMenu></div>
+            </DropdownMenu>
           </div>
         </div>
       </header>
