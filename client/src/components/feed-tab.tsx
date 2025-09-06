@@ -33,7 +33,12 @@ const mockReports = [
   },
 ];
 
-export function FeedTab() {
+interface FeedTabProps {
+  user?: { id: string; username: string; email: string };
+  showMyReports?: boolean;
+}
+
+export function FeedTab({ user, showMyReports = false }: FeedTabProps = {}) {
   const [refreshKey, setRefreshKey] = useState(0);
   const [verifiedReports, setVerifiedReports] = useState<Set<string>>(new Set());
   const { toast } = useToast();
@@ -88,13 +93,23 @@ export function FeedTab() {
     }
   };
 
-  // Use mock data if no real data available
-  const reports = data?.reports?.length > 0 ? data.reports : mockReports;
+  // Filter reports based on mode
+  let reports = data?.reports?.length > 0 ? data.reports : mockReports;
+  
+  if (showMyReports && user) {
+    // Only show reports created by the current user
+    reports = reports.filter((report: any) => report.userId === user.id);
+  } else if (!showMyReports) {
+    // Show all reports from other users (community feed)
+    reports = reports.filter((report: any) => !report.userId || report.userId !== user?.id);
+  }
 
   return (
     <div className="p-4 space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-foreground">Nearby Reports</h2>
+        <h2 className="text-lg font-semibold text-foreground">
+          {showMyReports ? 'My Reports' : 'Nearby Reports'}
+        </h2>
         <Button 
           variant="ghost" 
           size="sm"
