@@ -225,8 +225,17 @@ export function FeedTab({ user, showMyReports = false }: FeedTabProps = {}) {
 
       {reports.length === 0 && !isLoading && (
         <div className="text-center py-8">
-          <p className="text-muted-foreground">No hazard reports in your area yet.</p>
-          <p className="text-muted-foreground text-sm">Be the first to report an ocean hazard!</p>
+          {showMyReports ? (
+            <>
+              <p className="text-muted-foreground">You haven't created any reports yet.</p>
+              <p className="text-muted-foreground text-sm">Tap the Report tab to create your first hazard report!</p>
+            </>
+          ) : (
+            <>
+              <p className="text-muted-foreground">No hazard reports in your area yet.</p>
+              <p className="text-muted-foreground text-sm">Be the first to report an ocean hazard!</p>
+            </>
+          )}
         </div>
       )}
     </div>
