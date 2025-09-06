@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { BarChart3, Plus, Waves } from "lucide-react";
+import { BarChart3, Plus, Waves, Map } from "lucide-react";
 
 interface BottomNavigationProps {
   activeTab: string;
@@ -10,12 +10,13 @@ export function BottomNavigation({ activeTab, onTabChange }: BottomNavigationPro
   const tabs = [
     { id: "feed", label: "Feed", icon: Waves },
     { id: "report", label: "Report", icon: Plus },
+    { id: "map", label: "Map", icon: Map },
     { id: "dashboard", label: "Dashboard", icon: BarChart3 },
   ];
 
   return (
     <nav className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-sm bg-card border-t border-border">
-      <div className="grid grid-cols-3 h-16">
+      <div className="grid grid-cols-4 h-16">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;

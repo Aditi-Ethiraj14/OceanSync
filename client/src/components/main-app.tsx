@@ -12,6 +12,7 @@ import {
 import { FeedTab } from "./feed-tab";
 import { ReportTab } from "./report-tab";
 import { DashboardTab } from "./dashboard-tab";
+import { MapTab } from "./map-tab";
 import { BottomNavigation } from "./bottom-navigation";
 import { MarineChatbot } from "./marine-chatbot";
 
