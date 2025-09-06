@@ -181,7 +181,10 @@ export function ReportTab({ user }: ReportTabProps) {
         location: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`,
       };
 
-      await createReportMutation.mutateAsync(reportData);
+      const newReport = await createReportMutation.mutateAsync(reportData);
+      
+      // Force refresh the feed to show new report
+      queryClient.invalidateQueries({ queryKey: ['/api/hazard-reports'] });
 
       // Also try to submit to n8n webhook if available
       try {
@@ -216,6 +219,12 @@ export function ReportTab({ user }: ReportTabProps) {
       setSelectedAudio(null);
       if (imageInputRef.current) imageInputRef.current.value = "";
       if (audioInputRef.current) audioInputRef.current.value = "";
+      
+      // Switch to feed tab to show the new report
+      setTimeout(() => {
+        const feedTab = document.querySelector('[data-testid="button-tab-feed"]') as HTMLElement;
+        feedTab?.click();
+      }, 500);
 
     } catch (error) {
       console.error('Submission error:', error);
