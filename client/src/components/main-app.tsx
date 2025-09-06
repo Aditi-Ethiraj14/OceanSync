@@ -93,41 +93,37 @@ export function MainApp({ user, onLogout }: MainAppProps) {
             </div>
           </div>
           <div className="flex items-center space-x-2">
-            <Button variant="ghost" size="sm" data-testid="button-notifications">
-              <Bell className="h-5 w-5 text-muted-foreground" />
+            <Button variant="outline" size="sm" asChild>
+              <a href="/admin" target="_blank" rel="noopener noreferrer">
+                Admin Portal
+              </a>
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="flex items-center space-x-1" data-testid="button-user-menu">
-                  <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                    <span className="text-primary-foreground text-xs font-medium" data-testid="text-user-initials">
-                      {user.username.slice(0, 2).toUpperCase()}
-                    </span>
-                  </div>
-                  <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                <Button variant="ghost" size="sm">
+                  <MapPin className="mr-1 h-4 w-4" />
+                  <span className="truncate max-w-32">{currentLocation}</span>
+                  <ChevronDown className="ml-1 h-3 w-3" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem className="flex-col items-start">
-                  <div className="font-medium">{user.username}</div>
-                  <div className="text-xs text-muted-foreground">{user.email}</div>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem 
-                  onClick={() => setShowMyReports(!showMyReports)}
-                  data-testid="button-my-reports"
-                >
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setShowMyReports(!showMyReports)}>
                   <FileText className="mr-2 h-4 w-4" />
-                  My Reports
+                  {showMyReports ? 'Show All Reports' : 'Show My Reports'}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem 
-                  onClick={onLogout}
-                  className="text-destructive focus:text-destructive"
-                  data-testid="button-logout"
-                >
+                <DropdownMenuItem onClick={refetchLocation}>
+                  <MapPin className="mr-2 h-4 w-4" />
+                  Refresh Location
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Bell className="mr-2 h-4 w-4" />
+                  Notifications
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={onLogout}>
                   <LogOut className="mr-2 h-4 w-4" />
-                  Logout
+                  Sign out
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -167,7 +163,7 @@ export function MainApp({ user, onLogout }: MainAppProps) {
 
       {/* Bottom Navigation */}
       <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
-      
+
       {/* Marine Chatbot */}
       <MarineChatbot />
     </div>

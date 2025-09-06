@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { adminStorage } from "./admin-api";
 import { insertUserSchema, insertHazardReportSchema } from "@shared/schema";
 import { z } from "zod";
 
@@ -74,6 +75,124 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { userId } = req.params;
       const reports = await storage.getHazardReportsByUser(userId);
       res.json({ reports });
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Admin API routes
+  app.get("/api/admin/reports", async (req, res) => {
+    try {
+      // Get regular reports and convert to admin format
+      const regularReports = await storage.getHazardReports();
+      const adminReports = await adminStorage.getAllReports();
+      
+      // Convert any new regular reports to admin format
+      for (const report of regularReports) {
+        const existsInAdmin = adminReports.find(ar => ar.id === report.id);
+        if (!existsInAdmin) {
+          await adminStorage.convertToAdminReport(report);
+        }
+      }
+      
+      const allAdminReports = await adminStorage.getAllReports();
+      res.json({ reports: allAdminReports });
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.put("/api/admin/reports/:id/status", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status, assignedTo } = req.body;
+      
+      const updatedReport = await adminStorage.updateReportStatus(id, status, assignedTo);
+      
+      if (!updatedReport) {
+        return res.status(404).json({ message: "Report not found" });
+      }
+      
+      res.json({ report: updatedReport });
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.put("/api/admin/reports/:id/priority", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { priority } = req.body;
+      
+      const updatedReport = await adminStorage.updateReportPriority(id, priority);
+      
+      if (!updatedReport) {
+        return res.status(404).json({ message: "Report not found" });
+      }
+      
+      res.json({ report: updatedReport });
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/admin/reports/:id/notes", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { notes } = req.body;
+      
+      const updatedReport = await adminStorage.addReportNotes(id, notes);
+      
+      if (!updatedReport) {
+        return res.status(404).json({ message: "Report not found" });
+      }
+      
+      res.json({ report: updatedReport });
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/admin/team", async (req, res) => {
+    try {
+      const users = await adminStorage.getAllUsers();
+      res.json({ users });
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.put("/api/admin/team/:id/status", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { isOnline, location } = req.body;
+      
+      const updatedUser = await adminStorage.updateUserStatus(id, isOnline, location);
+      
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      res.json({ user: updatedUser });
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/admin/team", async (req, res) => {
+    try {
+      const userData = req.body;
+      const newUser = await adminStorage.createUser(userData);
+      res.json({ user: newUser });
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/admin/statistics", async (req, res) => {
+    try {
+      const stats = await adminStorage.getStatistics();
+      res.json(stats);
     } catch (error) {
       res.status(500).json({ message: "Internal server error" });
     }
