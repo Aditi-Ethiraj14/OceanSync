@@ -6,10 +6,11 @@ import { hazardReportApi } from "@/lib/api";
 import { formatDistanceToNow } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 
-// Mock data for initial display
+// Mock data for initial display - these are community reports from other users
 const mockReports = [
   {
     id: "1",
+    userId: "other-user-1",
     author: "Maria Rodriguez",
     initials: "MR",
     description: "Strong rip current observed near Pier 39. Swimmers should avoid this area.",
@@ -21,6 +22,7 @@ const mockReports = [
   },
   {
     id: "2",
+    userId: "other-user-2",
     author: "Jake Chen",
     initials: "JC",
     description: "Large debris washed up on beach. Appears to be plastic containers and fishing nets.",
