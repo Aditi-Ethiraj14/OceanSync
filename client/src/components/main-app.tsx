@@ -25,7 +25,7 @@ export function MainApp({ user, onLogout }: MainAppProps) {
   const [activeTab, setActiveTab] = useState("feed");
   const [showMyReports, setShowMyReports] = useState(false);
   const [currentLocation, setCurrentLocation] = useState("Getting location...");
-  const { latitude, longitude } = useGeolocation();
+  const { latitude, longitude, error: locationError, loading: locationLoading, refetch: refetchLocation } = useGeolocation();
 
   // Get location name from coordinates
   useEffect(() => {
@@ -40,8 +40,12 @@ export function MainApp({ user, onLogout }: MainAppProps) {
         .catch(() => {
           setCurrentLocation(`${latitude.toFixed(2)}, ${longitude.toFixed(2)}`);
         });
+    } else if (locationError) {
+      setCurrentLocation("Location unavailable");
+    } else if (locationLoading) {
+      setCurrentLocation("Getting location...");
     }
-  }, [latitude, longitude]);
+  }, [latitude, longitude, locationError, locationLoading]);
 
   const renderActiveTab = () => {
     switch (activeTab) {
@@ -74,6 +78,17 @@ export function MainApp({ user, onLogout }: MainAppProps) {
               <div className="flex items-center text-xs text-muted-foreground">
                 <MapPin className="mr-1 h-3 w-3" />
                 <span data-testid="text-location">{currentLocation}</span>
+                {locationError && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={refetchLocation}
+                    className="ml-1 h-4 text-xs p-1"
+                    data-testid="button-retry-location"
+                  >
+                    📍
+                  </Button>
+                )}
               </div>
             </div>
           </div>
@@ -119,6 +134,31 @@ export function MainApp({ user, onLogout }: MainAppProps) {
           </div>
         </div>
       </header>
+
+      {/* Location Permission Alert */}
+      {locationError && (
+        <div className="bg-orange-50 border-l-4 border-orange-400 p-3 mx-4 mt-2">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <MapPin className="h-4 w-4 text-orange-400" />
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-orange-700">
+                Location access is needed for reporting. Please allow location access and try again.
+              </p>
+              <Button 
+                variant="link" 
+                size="sm"
+                onClick={refetchLocation}
+                className="text-orange-600 p-0 h-auto text-sm"
+                data-testid="button-enable-location"
+              >
+                Enable Location Access
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Tab Content */}
       <div className="pb-20">
