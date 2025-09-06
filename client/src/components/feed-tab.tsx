@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, MapPin, Eye, CheckCircle, Share } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { hazardReportApi } from "@/lib/api";
 import { formatDistanceToNow } from "date-fns";
+import { useToast } from "@/hooks/use-toast";
 
 // Mock data for initial display
 const mockReports = [
@@ -34,6 +35,9 @@ const mockReports = [
 
 export function FeedTab() {
   const [refreshKey, setRefreshKey] = useState(0);
+  const [verifiedReports, setVerifiedReports] = useState<Set<string>>(new Set());
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['/api/hazard-reports', refreshKey],
@@ -139,10 +143,21 @@ export function FeedTab() {
                     </span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <Button variant="ghost" size="sm" data-testid={`button-verify-${report.id}`}>
-                      <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      data-testid={`button-verify-${report.id}`}
+                      onClick={() => handleVerifyReport(report.id)}
+                      className={verifiedReports.has(report.id) ? 'text-green-600' : ''}
+                    >
+                      <CheckCircle className={`h-4 w-4 ${verifiedReports.has(report.id) ? 'text-green-600' : 'text-muted-foreground'}`} />
                     </Button>
-                    <Button variant="ghost" size="sm" data-testid={`button-share-${report.id}`}>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      data-testid={`button-share-${report.id}`}
+                      onClick={() => handleShareReport(report.id, report.description)}
+                    >
                       <Share className="h-4 w-4 text-muted-foreground" />
                     </Button>
                   </div>
