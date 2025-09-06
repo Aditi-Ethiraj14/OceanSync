@@ -121,39 +121,61 @@ export function MapTab() {
         </div>
       )}
 
-      {/* Simple Map Visualization */}
+      {/* Enhanced Map Visualization */}
       <div className="bg-card border border-border rounded-lg overflow-hidden">
-        <div className="relative h-96 bg-gradient-to-br from-blue-100 to-blue-200">
-          {/* Grid overlay for map effect */}
-          <div 
-            className="absolute inset-0 opacity-20"
-            style={{
-              backgroundImage: `
-                linear-gradient(rgba(0,0,0,0.1) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0,0,0,0.1) 1px, transparent 1px)
-              `,
-              backgroundSize: '20px 20px'
-            }}
-          />
+        <div className="relative h-96 bg-gradient-to-br from-blue-200 via-blue-100 to-cyan-100">
+          {/* Coastline and water effect */}
+          <div className="absolute inset-0 opacity-30">
+            <div 
+              className="absolute inset-0"
+              style={{
+                backgroundImage: `
+                  radial-gradient(circle at 30% 40%, rgba(34, 197, 94, 0.2) 0%, transparent 50%),
+                  radial-gradient(circle at 70% 70%, rgba(34, 197, 94, 0.15) 0%, transparent 50%),
+                  linear-gradient(rgba(59, 130, 246, 0.1) 1px, transparent 1px),
+                  linear-gradient(90deg, rgba(59, 130, 246, 0.1) 1px, transparent 1px)
+                `,
+                backgroundSize: '60px 60px, 80px 80px, 15px 15px, 15px 15px'
+              }}
+            />
+          </div>
+          
+          {/* Zoom controls */}
+          <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg flex flex-col">
+            <button 
+              onClick={() => setZoom(prev => Math.min(prev + 2, 20))}
+              className="px-3 py-2 text-sm font-medium hover:bg-gray-100 border-b border-gray-200"
+            >
+              +
+            </button>
+            <button 
+              onClick={() => setZoom(prev => Math.max(prev - 2, 5))}
+              className="px-3 py-2 text-sm font-medium hover:bg-gray-100"
+            >
+              −
+            </button>
+          </div>
           
           {/* User location marker */}
           {userLat && userLng && (
             <div 
-              className="absolute w-3 h-3 bg-blue-600 rounded-full border-2 border-white shadow-lg transform -translate-x-1/2 -translate-y-1/2 z-10"
+              className="absolute w-4 h-4 bg-blue-600 rounded-full border-2 border-white shadow-lg transform -translate-x-1/2 -translate-y-1/2 z-20"
               style={{
-                left: `${50 + (userLng - mapCenter.lng) * 100}%`,
-                top: `${50 - (userLat - mapCenter.lat) * 100}%`,
+                left: `${50 + (userLng - mapCenter.lng) * (zoom * 10)}%`,
+                top: `${50 - (userLat - mapCenter.lat) * (zoom * 10)}%`,
               }}
               data-testid="user-location-marker"
             >
-              <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div>
+              <div className="w-3 h-3 bg-blue-600 rounded-full animate-pulse"></div>
+              {/* Pulsing circle for user location */}
+              <div className="absolute inset-0 bg-blue-400 rounded-full animate-ping opacity-75"></div>
             </div>
           )}
 
           {/* Hazard report markers */}
           {mapPoints.map((point) => {
-            const x = 50 + (point.longitude - mapCenter.lng) * 100;
-            const y = 50 - (point.latitude - mapCenter.lat) * 100;
+            const x = 50 + (point.longitude - mapCenter.lng) * (zoom * 10);
+            const y = 50 - (point.latitude - mapCenter.lat) * (zoom * 10);
             
             // Only show points within visible area
             if (x < 0 || x > 100 || y < 0 || y > 100) return null;
