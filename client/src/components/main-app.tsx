@@ -1,0 +1,71 @@
+import { useState } from "react";
+import { Bell, MapPin } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { FeedTab } from "./feed-tab";
+import { ReportTab } from "./report-tab";
+import { DashboardTab } from "./dashboard-tab";
+import { BottomNavigation } from "./bottom-navigation";
+
+interface MainAppProps {
+  user: { id: string; username: string; email: string };
+  onLogout: () => void;
+}
+
+export function MainApp({ user, onLogout }: MainAppProps) {
+  const [activeTab, setActiveTab] = useState("feed");
+
+  const renderActiveTab = () => {
+    switch (activeTab) {
+      case "feed":
+        return <FeedTab />;
+      case "report":
+        return <ReportTab user={user} />;
+      case "dashboard":
+        return <DashboardTab />;
+      default:
+        return <FeedTab />;
+    }
+  };
+
+  return (
+    <div className="min-h-screen">
+      {/* Header */}
+      <header className="bg-card border-b border-border p-4 sticky top-0 z-50 glass-effect">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="bg-primary/10 w-10 h-10 rounded-full flex items-center justify-center">
+              <svg className="text-primary w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 9.134a1 1 0 010 1.732L14.146 12.8l-1.179 4.456a1 1 0 01-1.934 0L9.854 12.8 6.5 10.866a1 1 0 010-1.732L9.854 7.2l1.179-4.456A1 1 0 0112 2z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div>
+              <h1 className="font-bold text-foreground">OceanSync</h1>
+              <div className="flex items-center text-xs text-muted-foreground">
+                <MapPin className="mr-1 h-3 w-3" />
+                <span data-testid="text-location">Santa Monica, CA</span>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Button variant="ghost" size="sm" data-testid="button-notifications">
+              <Bell className="h-5 w-5 text-muted-foreground" />
+            </Button>
+            <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+              <span className="text-primary-foreground text-xs font-medium" data-testid="text-user-initials">
+                {user.username.slice(0, 2).toUpperCase()}
+              </span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Tab Content */}
+      <div className="pb-20">
+        {renderActiveTab()}
+      </div>
+
+      {/* Bottom Navigation */}
+      <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+    </div>
+  );
+}
