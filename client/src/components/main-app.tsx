@@ -12,6 +12,7 @@ import { FeedTab } from "./feed-tab";
 import { ReportTab } from "./report-tab";
 import { DashboardTab } from "./dashboard-tab";
 import { BottomNavigation } from "./bottom-navigation";
+import { MarineChatbot } from "./marine-chatbot";
 
 interface MainAppProps {
   user: { id: string; username: string; email: string };
@@ -104,6 +105,9 @@ export function MainApp({ user, onLogout }: MainAppProps) {
 
       {/* Bottom Navigation */}
       <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+      
+      {/* Marine Chatbot */}
+      <MarineChatbot />
     </div>
   );
 }
