@@ -19,9 +19,13 @@ export function ReportTab({ user }: ReportTabProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [stream, setStream] = useState<MediaStream | null>(null);
   
   const imageInputRef = useRef<HTMLInputElement>(null);
   const audioInputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   
   const { latitude, longitude, error: locationError, loading: locationLoading, refetch: refetchLocation } = useGeolocation();
   const { toast } = useToast();
@@ -39,6 +43,56 @@ export function ReportTab({ user }: ReportTabProps) {
     if (file) {
       setSelectedImage(file);
     }
+  };
+
+  const openCamera = async () => {
+    try {
+      const mediaStream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' }, // Use back camera on mobile
+        audio: false 
+      });
+      setStream(mediaStream);
+      setIsCameraOpen(true);
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = mediaStream;
+      }
+    } catch (error) {
+      toast({
+        title: "Camera access denied",
+        description: "Please allow camera access to take photos.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const capturePhoto = () => {
+    if (videoRef.current && canvasRef.current) {
+      const canvas = canvasRef.current;
+      const video = videoRef.current;
+      const context = canvas.getContext('2d');
+      
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      
+      context?.drawImage(video, 0, 0, canvas.width, canvas.height);
+      
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const file = new File([blob], 'camera-capture.jpg', { type: 'image/jpeg' });
+          setSelectedImage(file);
+          closeCamera();
+        }
+      }, 'image/jpeg', 0.8);
+    }
+  };
+
+  const closeCamera = () => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      setStream(null);
+    }
+    setIsCameraOpen(false);
   };
 
   const handleAudioUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -206,25 +260,37 @@ export function ReportTab({ user }: ReportTabProps) {
         <div className="grid grid-cols-2 gap-3">
           <div>
             <Label className="block text-sm font-medium text-foreground mb-2">
-              Upload Photo
+              Add Photo
             </Label>
-            <div 
-              className="border border-dashed border-border rounded-lg p-4 text-center hover:bg-accent/50 transition-colors cursor-pointer"
-              onClick={() => imageInputRef.current?.click()}
-              data-testid="button-upload-photo"
-            >
-              <Camera className="text-muted-foreground text-xl mb-2 mx-auto" size={24} />
-              <p className="text-muted-foreground text-xs">
-                {selectedImage ? selectedImage.name : "Tap to add photo"}
-              </p>
-              <input
-                ref={imageInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleImageUpload}
-                className="hidden"
-                data-testid="input-image"
-              />
+            {selectedImage && (
+              <div className="mb-2 text-xs text-green-600">
+                ✓ Photo selected: {selectedImage.name}
+              </div>
+            )}
+            <div className="space-y-2">
+              <div 
+                className="border border-dashed border-border rounded-lg p-3 text-center hover:bg-accent/50 transition-colors cursor-pointer"
+                onClick={openCamera}
+                data-testid="button-open-camera"
+              >
+                <Camera className="text-muted-foreground text-xl mb-1 mx-auto" size={20} />
+                <p className="text-muted-foreground text-xs">Take Photo</p>
+              </div>
+              <div 
+                className="border border-dashed border-border rounded-lg p-3 text-center hover:bg-accent/50 transition-colors cursor-pointer text-xs"
+                onClick={() => imageInputRef.current?.click()}
+                data-testid="button-upload-photo"
+              >
+                Or upload file
+                <input
+                  ref={imageInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                  data-testid="input-image"
+                />
+              </div>
             </div>
           </div>
           
@@ -261,6 +327,43 @@ export function ReportTab({ user }: ReportTabProps) {
             </div>
           </div>
         </div>
+
+        {/* Camera Modal */}
+        {isCameraOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center">
+            <div className="bg-card p-4 rounded-lg max-w-sm w-full mx-4">
+              <div className="text-center mb-4">
+                <h3 className="font-medium text-foreground">Take Photo</h3>
+              </div>
+              <div className="relative mb-4">
+                <video 
+                  ref={videoRef} 
+                  autoPlay 
+                  playsInline
+                  className="w-full h-48 object-cover rounded-lg bg-black"
+                />
+                <canvas ref={canvasRef} className="hidden" />
+              </div>
+              <div className="flex space-x-3">
+                <Button 
+                  variant="secondary" 
+                  className="flex-1" 
+                  onClick={closeCamera}
+                  data-testid="button-cancel-camera"
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  className="flex-1" 
+                  onClick={capturePhoto}
+                  data-testid="button-capture-photo"
+                >
+                  Capture
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="bg-muted rounded-lg p-3">
           <div className="flex items-center space-x-2 text-sm">
