@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { Bell, MapPin, LogOut, FileText, ChevronDown } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Bell, MapPin, LogOut, FileText, ChevronDown, Map } from "lucide-react";
+import { useGeolocation } from "@/hooks/use-geolocation";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -22,6 +23,24 @@ interface MainAppProps {
 export function MainApp({ user, onLogout }: MainAppProps) {
   const [activeTab, setActiveTab] = useState("feed");
   const [showMyReports, setShowMyReports] = useState(false);
+  const [currentLocation, setCurrentLocation] = useState("Getting location...");
+  const { latitude, longitude } = useGeolocation();
+
+  // Get location name from coordinates
+  useEffect(() => {
+    if (latitude && longitude) {
+      fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`)
+        .then(response => response.json())
+        .then(data => {
+          const city = data.city || data.locality || 'Unknown';
+          const country = data.countryCode || '';
+          setCurrentLocation(`${city}, ${country}`);
+        })
+        .catch(() => {
+          setCurrentLocation(`${latitude.toFixed(2)}, ${longitude.toFixed(2)}`);
+        });
+    }
+  }, [latitude, longitude]);
 
   const renderActiveTab = () => {
     switch (activeTab) {
@@ -31,6 +50,8 @@ export function MainApp({ user, onLogout }: MainAppProps) {
         return <ReportTab user={user} />;
       case "dashboard":
         return <DashboardTab />;
+      case "map":
+        return <MapTab />;
       default:
         return <FeedTab />;
     }
@@ -51,7 +72,7 @@ export function MainApp({ user, onLogout }: MainAppProps) {
               <h1 className="font-bold text-foreground">OceanSync</h1>
               <div className="flex items-center text-xs text-muted-foreground">
                 <MapPin className="mr-1 h-3 w-3" />
-                <span data-testid="text-location">Santa Monica, CA</span>
+                <span data-testid="text-location">{currentLocation}</span>
               </div>
             </div>
           </div>
