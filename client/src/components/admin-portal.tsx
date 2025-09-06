@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Users, AlertTriangle, Clock, CheckCircle, MapPin, Filter, Search, Plus, UserPlus, Settings } from "lucide-react";
+import { Users, AlertTriangle, Clock, CheckCircle, MapPin, Filter, Search, Plus, UserPlus, Settings, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -14,6 +14,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { hazardReportApi } from "@/lib/api";
 import { formatDistanceToNow } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
+import { AdminAuthScreen } from "./admin-auth-screen";
 
 interface AdminUser {
   id: string;
@@ -22,27 +23,28 @@ interface AdminUser {
   role: 'admin' | 'supervisor' | 'field_officer';
   isOnline: boolean;
   location?: { lat: number; lng: number };
+  pin?: string;
 }
 
-interface ReportWithStatus extends any {
+interface ReportWithStatus {
+  id: string;
+  userId: string;
+  description: string;
+  latitude: number;
+  longitude: number;
   status: 'incoming' | 'in_progress' | 'resolved';
   priority: 'low' | 'medium' | 'high' | 'critical';
   assignedTo?: string;
-  assignedTeam?: AdminUser[];
   notes?: string;
+  createdAt: string;
+  imageUrl?: string;
 }
 
 export function AdminPortal() {
-  const [activeTab, setActiveTab] = useState("dashboard");
+  const [currentAdmin, setCurrentAdmin] = useState<AdminUser | null>(null);
+  const [filter, setFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
   const [selectedReport, setSelectedReport] = useState<ReportWithStatus | null>(null);
-  const [filterStatus, setFilterStatus] = useState<string>("all");
-  const [filterPriority, setFilterPriority] = useState<string>("all");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [mapCenter, setMapCenter] = useState({ lat: 13.0827, lng: 80.2707 });
-  const [zoom, setZoom] = useState(10);
-  const [showAssignDialog, setShowAssignDialog] = useState(false);
-  const [showTeamDialog, setShowTeamDialog] = useState(false);
-  
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -65,18 +67,18 @@ export function AdminPortal() {
 
   useEffect(() => {
     if (data?.reports) {
-      const enhancedReports = data.reports.map((report: any) => ({
+      const adminReports = data.reports.map((report: any) => ({
         ...report,
-        status: Math.random() > 0.7 ? 'incoming' : Math.random() > 0.5 ? 'in_progress' : 'resolved',
+        status: 'incoming' as const,
         priority: getPriorityFromDescription(report.description),
-        assignedTo: Math.random() > 0.6 ? adminUsers[Math.floor(Math.random() * adminUsers.length)].id : undefined,
-        notes: Math.random() > 0.7 ? 'Initial assessment completed' : undefined,
+        assignedTo: undefined,
+        notes: '',
       }));
-      setReportsWithStatus(enhancedReports);
+      setReportsWithStatus(adminReports);
     }
-  }, [data, adminUsers]);
+  }, [data]);
 
-  function getPriorityFromDescription(description: string): 'low' | 'medium' | 'high' | 'critical' {
+  const getPriorityFromDescription = (description: string): ReportWithStatus['priority'] => {
     const lowerDesc = description.toLowerCase();
     if (lowerDesc.includes('emergency') || lowerDesc.includes('dangerous') || lowerDesc.includes('critical')) {
       return 'critical';
@@ -88,55 +90,69 @@ export function AdminPortal() {
       return 'medium';
     }
     return 'low';
-  }
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'critical': return 'bg-red-600 text-white';
-      case 'high': return 'bg-red-500 text-white';
-      case 'medium': return 'bg-orange-500 text-white';
-      case 'low': return 'bg-yellow-500 text-black';
-      default: return 'bg-gray-500 text-white';
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'incoming': return 'bg-blue-500 text-white';
-      case 'in_progress': return 'bg-orange-500 text-white';
-      case 'resolved': return 'bg-green-500 text-white';
-      default: return 'bg-gray-500 text-white';
-    }
-  };
-
-  // Filter reports
-  const filteredReports = reportsWithStatus.filter(report => {
-    const statusMatch = filterStatus === 'all' || report.status === filterStatus;
-    const priorityMatch = filterPriority === 'all' || report.priority === filterPriority;
-    const searchMatch = searchTerm === '' || 
-      report.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      report.author?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    return statusMatch && priorityMatch && searchMatch;
-  });
-
-  const handleAssignReport = (reportId: string, userId: string) => {
-    setReportsWithStatus(prev => prev.map(report => 
-      report.id === reportId 
-        ? { ...report, assignedTo: userId, status: 'in_progress' }
-        : report
-    ));
-    toast({ title: "Report assigned successfully" });
   };
 
   const handleStatusChange = (reportId: string, newStatus: string) => {
-    setReportsWithStatus(prev => prev.map(report => 
-      report.id === reportId 
-        ? { ...report, status: newStatus }
-        : report
-    ));
-    toast({ title: "Status updated successfully" });
+    setReportsWithStatus(prev => 
+      prev.map(report => 
+        report.id === reportId 
+          ? { ...report, status: newStatus as ReportWithStatus['status'] }
+          : report
+      )
+    );
+    toast({ title: "Status updated", description: `Report status changed to ${newStatus}` });
   };
+
+  const handlePriorityChange = (reportId: string, newPriority: string) => {
+    setReportsWithStatus(prev => 
+      prev.map(report => 
+        report.id === reportId 
+          ? { ...report, priority: newPriority as ReportWithStatus['priority'] }
+          : report
+      )
+    );
+    toast({ title: "Priority updated", description: `Report priority changed to ${newPriority}` });
+  };
+
+  const handleAssignReport = (reportId: string, userId: string) => {
+    const user = adminUsers.find(u => u.id === userId);
+    setReportsWithStatus(prev => 
+      prev.map(report => 
+        report.id === reportId 
+          ? { ...report, assignedTo: userId, status: 'in_progress' as const }
+          : report
+      )
+    );
+    toast({ title: "Report assigned", description: `Report assigned to ${user?.name}` });
+  };
+
+  const handleAddNotes = (reportId: string, notes: string) => {
+    setReportsWithStatus(prev => 
+      prev.map(report => 
+        report.id === reportId 
+          ? { ...report, notes }
+          : report
+      )
+    );
+    toast({ title: "Notes added", description: "Report notes have been updated" });
+  };
+
+  const handleLogout = () => {
+    setCurrentAdmin(null);
+    toast({ title: "Logged out", description: "You have been logged out of the authority portal" });
+  };
+
+  // Show authentication screen if not logged in
+  if (!currentAdmin) {
+    return <AdminAuthScreen onLogin={setCurrentAdmin} />;
+  }
+
+  // Filter reports
+  const filteredReports = reportsWithStatus.filter(report => {
+    const matchesFilter = filter === 'all' || report.status === filter;
+    const matchesSearch = report.description.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesFilter && matchesSearch;
+  });
 
   // Statistics
   const stats = {
@@ -163,17 +179,22 @@ export function AdminPortal() {
                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                 <span>{stats.onlineTeam} Team Online</span>
               </Badge>
-              <Button variant="outline" size="sm">
-                <Settings className="w-4 h-4 mr-2" />
-                Settings
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-gray-600">Welcome, {currentAdmin.name}</span>
+                <Badge variant="outline">{currentAdmin.role}</Badge>
+              </div>
+              <Button variant="outline" size="sm" onClick={handleLogout}>
+                <LogOut className="w-4 h-4 mr-2" />
+                Logout
               </Button>
             </div>
           </div>
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <Tabs defaultValue="dashboard" className="space-y-6">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
             <TabsTrigger value="reports">Reports</TabsTrigger>
@@ -184,7 +205,7 @@ export function AdminPortal() {
           {/* Dashboard Tab */}
           <TabsContent value="dashboard" className="space-y-6">
             {/* Statistics Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Total Reports</CardTitle>
@@ -192,84 +213,94 @@ export function AdminPortal() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{stats.total}</div>
-                  <p className="text-xs text-muted-foreground">All time reports</p>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Incoming</CardTitle>
-                  <Clock className="h-4 w-4 text-blue-600" />
+                  <Clock className="h-4 w-4 text-orange-500" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-blue-600">{stats.incoming}</div>
-                  <p className="text-xs text-muted-foreground">Awaiting assignment</p>
+                  <div className="text-2xl font-bold text-orange-600">{stats.incoming}</div>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">In Progress</CardTitle>
-                  <Users className="h-4 w-4 text-orange-600" />
+                  <Clock className="h-4 w-4 text-blue-500" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-orange-600">{stats.inProgress}</div>
-                  <p className="text-xs text-muted-foreground">Being handled</p>
+                  <div className="text-2xl font-bold text-blue-600">{stats.inProgress}</div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Resolved</CardTitle>
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-green-600">{stats.resolved}</div>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Critical</CardTitle>
-                  <AlertTriangle className="h-4 w-4 text-red-600" />
+                  <AlertTriangle className="h-4 w-4 text-red-500" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-red-600">{stats.critical}</div>
-                  <p className="text-xs text-muted-foreground">High priority</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Team Online</CardTitle>
+                  <Users className="h-4 w-4 text-green-500" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-green-600">{stats.onlineTeam}</div>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Mini Map */}
+            {/* Recent Reports */}
             <Card>
               <CardHeader>
-                <CardTitle>Live Hazard Map Overview</CardTitle>
+                <CardTitle>Recent Reports</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="relative h-64 bg-gradient-to-br from-blue-200 via-blue-100 to-cyan-100 rounded-lg overflow-hidden">
-                  {/* Map points */}
-                  {filteredReports.map((report, index) => {
-                    const x = 20 + (index * 15) % 60;
-                    const y = 20 + (index * 10) % 40;
-                    return (
-                      <div
-                        key={report.id}
-                        className={`absolute w-3 h-3 rounded-full border border-white cursor-pointer ${
-                          report.priority === 'critical' ? 'bg-red-600' :
-                          report.priority === 'high' ? 'bg-red-500' :
-                          report.priority === 'medium' ? 'bg-orange-500' : 'bg-yellow-500'
-                        }`}
-                        style={{
-                          left: `${x}%`,
-                          top: `${y}%`,
-                        }}
-                        title={report.description}
-                      />
-                    );
-                  })}
-                  
-                  {/* Team locations */}
-                  {adminUsers.filter(u => u.isOnline && u.location).map((user, index) => (
-                    <div
-                      key={user.id}
-                      className="absolute w-4 h-4 bg-blue-600 rounded-full border-2 border-white"
-                      style={{
-                        left: `${30 + (index * 20)}%`,
-                        top: `${60 + (index * 10) % 20}%`,
-                      }}
-                      title={`${user.name} - ${user.role}`}
-                    >
-                      <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div>
+                <div className="space-y-4">
+                  {reportsWithStatus.slice(0, 5).map((report) => (
+                    <div key={report.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex-1">
+                        <p className="font-medium">{report.description}</p>
+                        <div className="flex items-center space-x-4 text-sm text-gray-500 mt-1">
+                          <span>{formatDistanceToNow(new Date(report.createdAt), { addSuffix: true })}</span>
+                          <span className="flex items-center">
+                            <MapPin className="w-3 h-3 mr-1" />
+                            {report.latitude.toFixed(4)}, {report.longitude.toFixed(4)}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Badge variant={
+                          report.priority === 'critical' ? 'destructive' :
+                          report.priority === 'high' ? 'destructive' :
+                          report.priority === 'medium' ? 'default' : 'secondary'
+                        }>
+                          {report.priority}
+                        </Badge>
+                        <Badge variant={
+                          report.status === 'resolved' ? 'default' :
+                          report.status === 'in_progress' ? 'secondary' : 'outline'
+                        }>
+                          {report.status.replace('_', ' ')}
+                        </Badge>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -279,92 +310,98 @@ export function AdminPortal() {
 
           {/* Reports Tab */}
           <TabsContent value="reports" className="space-y-6">
-            {/* Filters */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Filter Reports</CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-wrap gap-4">
-                <div className="flex-1 min-w-64">
-                  <Input
-                    placeholder="Search reports..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full"
-                  />
-                </div>
-                <Select value={filterStatus} onValueChange={setFilterStatus}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue placeholder="Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="incoming">Incoming</SelectItem>
-                    <SelectItem value="in_progress">In Progress</SelectItem>
-                    <SelectItem value="resolved">Resolved</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select value={filterPriority} onValueChange={setFilterPriority}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue placeholder="Priority" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Priority</SelectItem>
-                    <SelectItem value="critical">Critical</SelectItem>
-                    <SelectItem value="high">High</SelectItem>
-                    <SelectItem value="medium">Medium</SelectItem>
-                    <SelectItem value="low">Low</SelectItem>
-                  </SelectContent>
-                </Select>
-              </CardContent>
-            </Card>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-1">
+                <Input
+                  placeholder="Search reports..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="max-w-sm"
+                />
+              </div>
+              <Select value={filter} onValueChange={setFilter}>
+                <SelectTrigger className="w-48">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Reports</SelectItem>
+                  <SelectItem value="incoming">Incoming</SelectItem>
+                  <SelectItem value="in_progress">In Progress</SelectItem>
+                  <SelectItem value="resolved">Resolved</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-            {/* Reports List */}
-            <div className="space-y-4">
+            <div className="grid gap-4">
               {filteredReports.map((report) => (
                 <Card key={report.id} className="cursor-pointer hover:shadow-md transition-shadow">
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center space-x-2 mb-2">
-                          <Badge className={getPriorityColor(report.priority)}>
-                            {report.priority.toUpperCase()}
+                          <Badge variant={
+                            report.priority === 'critical' ? 'destructive' :
+                            report.priority === 'high' ? 'destructive' :
+                            report.priority === 'medium' ? 'default' : 'secondary'
+                          }>
+                            {report.priority}
                           </Badge>
-                          <Badge className={getStatusColor(report.status)}>
-                            {report.status.replace('_', ' ').toUpperCase()}
+                          <Badge variant={
+                            report.status === 'resolved' ? 'default' :
+                            report.status === 'in_progress' ? 'secondary' : 'outline'
+                          }>
+                            {report.status.replace('_', ' ')}
                           </Badge>
-                          <span className="text-sm text-gray-500">
-                            {formatDistanceToNow(new Date(report.createdAt || Date.now()), { addSuffix: true })}
-                          </span>
-                        </div>
-                        <h3 className="font-semibold text-lg mb-2">Report #{report.id.slice(0, 8)}</h3>
-                        <p className="text-gray-700 mb-2">{report.description}</p>
-                        <div className="flex items-center space-x-4 text-sm text-gray-500">
-                          <span className="flex items-center">
-                            <MapPin className="w-4 h-4 mr-1" />
-                            {report.latitude?.toFixed(4)}, {report.longitude?.toFixed(4)}
-                          </span>
-                          <span>Reporter: {report.author || 'Anonymous'}</span>
                           {report.assignedTo && (
-                            <span>
-                              Assigned to: {adminUsers.find(u => u.id === report.assignedTo)?.name}
-                            </span>
+                            <Badge variant="outline">
+                              Assigned to {adminUsers.find(u => u.id === report.assignedTo)?.name}
+                            </Badge>
                           )}
                         </div>
+                        
+                        <p className="text-gray-900 mb-2">{report.description}</p>
+                        
+                        <div className="flex items-center space-x-4 text-sm text-gray-500">
+                          <span>{formatDistanceToNow(new Date(report.createdAt), { addSuffix: true })}</span>
+                          <span className="flex items-center">
+                            <MapPin className="w-3 h-3 mr-1" />
+                            {report.latitude.toFixed(4)}, {report.longitude.toFixed(4)}
+                          </span>
+                        </div>
+
+                        {report.notes && (
+                          <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+                            <p className="text-sm text-gray-700">{report.notes}</p>
+                          </div>
+                        )}
                       </div>
-                      <div className="flex flex-col space-y-2">
+                      
+                      <div className="ml-4 space-y-2">
                         <Dialog>
                           <DialogTrigger asChild>
-                            <Button variant="outline" size="sm">
-                              <Users className="w-4 h-4 mr-2" />
-                              Assign
+                            <Button variant="outline" size="sm" onClick={() => setSelectedReport(report)}>
+                              Manage
                             </Button>
                           </DialogTrigger>
-                          <DialogContent>
+                          <DialogContent className="max-w-md">
                             <DialogHeader>
-                              <DialogTitle>Assign Report</DialogTitle>
+                              <DialogTitle>Manage Report</DialogTitle>
                             </DialogHeader>
                             <div className="space-y-4">
+                              <div>
+                                <Label>Priority</Label>
+                                <Select onValueChange={(value) => handlePriorityChange(report.id, value)}>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select priority" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="low">Low</SelectItem>
+                                    <SelectItem value="medium">Medium</SelectItem>
+                                    <SelectItem value="high">High</SelectItem>
+                                    <SelectItem value="critical">Critical</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
                               <div>
                                 <Label>Assign to Team Member</Label>
                                 <Select onValueChange={(value) => handleAssignReport(report.id, value)}>
@@ -398,14 +435,14 @@ export function AdminPortal() {
                               </div>
                               <div>
                                 <Label>Add Notes</Label>
-                                <Textarea placeholder="Add any notes or comments..." />
+                                <Textarea
+                                  placeholder="Add investigation notes..."
+                                  onBlur={(e) => handleAddNotes(report.id, e.target.value)}
+                                />
                               </div>
                             </div>
                           </DialogContent>
                         </Dialog>
-                        <Button variant="ghost" size="sm" onClick={() => setSelectedReport(report)}>
-                          View Details
-                        </Button>
                       </div>
                     </div>
                   </CardContent>
@@ -418,76 +455,48 @@ export function AdminPortal() {
           <TabsContent value="map" className="space-y-6">
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle>Live Hazard Map</CardTitle>
-                  <div className="flex items-center space-x-2">
-                    <Button variant="outline" size="sm">
-                      <Filter className="w-4 h-4 mr-2" />
-                      Filters
-                    </Button>
-                  </div>
-                </div>
+                <CardTitle className="flex items-center space-x-2">
+                  <MapPin className="w-5 h-5" />
+                  <span>Live Hazard Map</span>
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="relative h-96 bg-gradient-to-br from-blue-200 via-blue-100 to-cyan-100 rounded-lg overflow-hidden">
-                  {/* Enhanced Map Visualization */}
-                  <div className="absolute inset-0 opacity-30">
-                    <div 
-                      className="absolute inset-0"
+                <div className="relative bg-blue-100 rounded-lg overflow-hidden" style={{ height: '500px' }}>
+                  {/* Simulated map background */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-200 to-blue-300">
+                    <div className="absolute inset-0 opacity-20">
+                      <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
+                        <path d="M0,20 Q25,10 50,20 T100,20 L100,80 Q75,90 50,80 T0,80 Z" fill="rgba(34,197,94,0.3)" />
+                        <path d="M0,60 Q25,50 50,60 T100,60 L100,100 L0,100 Z" fill="rgba(34,197,94,0.5)" />
+                      </svg>
+                    </div>
+                  </div>
+
+                  {/* Report markers */}
+                  {reportsWithStatus.map((report, index) => (
+                    <div
+                      key={report.id}
+                      className={`absolute w-4 h-4 rounded-full border-2 border-white shadow-lg cursor-pointer ${
+                        report.priority === 'critical' ? 'bg-red-600' :
+                        report.priority === 'high' ? 'bg-orange-500' :
+                        report.priority === 'medium' ? 'bg-yellow-500' : 'bg-blue-500'
+                      }`}
                       style={{
-                        backgroundImage: `
-                          radial-gradient(circle at 30% 40%, rgba(34, 197, 94, 0.2) 0%, transparent 50%),
-                          radial-gradient(circle at 70% 70%, rgba(34, 197, 94, 0.15) 0%, transparent 50%),
-                          linear-gradient(rgba(59, 130, 246, 0.1) 1px, transparent 1px),
-                          linear-gradient(90deg, rgba(59, 130, 246, 0.1) 1px, transparent 1px)
-                        `,
-                        backgroundSize: '60px 60px, 80px 80px, 15px 15px, 15px 15px'
+                        left: `${20 + (index * 15) % 60}%`,
+                        top: `${30 + (index * 20) % 40}%`,
                       }}
-                    />
-                  </div>
-
-                  {/* Zoom controls */}
-                  <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg flex flex-col">
-                    <button 
-                      onClick={() => setZoom(prev => Math.min(prev + 2, 20))}
-                      className="px-3 py-2 text-sm font-medium hover:bg-gray-100 border-b border-gray-200"
+                      title={`${report.description} - ${report.priority} priority`}
                     >
-                      +
-                    </button>
-                    <button 
-                      onClick={() => setZoom(prev => Math.max(prev - 2, 5))}
-                      className="px-3 py-2 text-sm font-medium hover:bg-gray-100"
-                    >
-                      −
-                    </button>
-                  </div>
-
-                  {/* Hazard report markers */}
-                  {filteredReports.map((report, index) => {
-                    const x = 20 + (index * 15) % 60;
-                    const y = 20 + (index * 10) % 40;
-                    
-                    return (
-                      <div
-                        key={report.id}
-                        className={`absolute w-4 h-4 rounded-full border-2 border-white shadow-lg cursor-pointer hover:scale-125 transition-transform ${
-                          report.priority === 'critical' ? 'bg-red-600' :
-                          report.priority === 'high' ? 'bg-red-500' :
-                          report.priority === 'medium' ? 'bg-orange-500' : 'bg-yellow-500'
-                        } ${report.status === 'incoming' ? 'animate-pulse' : ''}`}
-                        style={{
-                          left: `${x}%`,
-                          top: `${y}%`,
-                        }}
-                        title={`${report.description} - ${report.status}`}
-                        onClick={() => setSelectedReport(report)}
-                      >
-                        {report.status === 'incoming' && (
-                          <div className="absolute inset-0 bg-current rounded-full animate-ping opacity-75"></div>
-                        )}
-                      </div>
-                    );
-                  })}
+                      <div className={`w-2 h-2 rounded-full animate-pulse ${
+                        report.priority === 'critical' ? 'bg-red-600' :
+                        report.priority === 'high' ? 'bg-orange-500' :
+                        report.priority === 'medium' ? 'bg-yellow-500' : 'bg-blue-500'
+                      }`}></div>
+                      {report.priority === 'critical' && (
+                        <div className="absolute inset-0 bg-red-400 rounded-full animate-ping opacity-75"></div>
+                      )}
+                    </div>
+                  ))}
 
                   {/* Team member locations */}
                   {adminUsers.filter(u => u.isOnline && u.location).map((user, index) => (
@@ -506,28 +515,28 @@ export function AdminPortal() {
                   ))}
 
                   {/* Map legend */}
-                  <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm rounded-lg p-3 shadow-lg">
+                  <div className="absolute bottom-4 left-4 bg-white rounded-lg p-3 shadow-lg">
                     <h4 className="font-medium text-sm mb-2">Legend</h4>
                     <div className="space-y-1 text-xs">
                       <div className="flex items-center space-x-2">
                         <div className="w-3 h-3 bg-red-600 rounded-full"></div>
-                        <span>Critical Priority</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                        <span>High Priority</span>
+                        <span>Critical Reports</span>
                       </div>
                       <div className="flex items-center space-x-2">
                         <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-                        <span>Medium Priority</span>
+                        <span>High Priority</span>
                       </div>
                       <div className="flex items-center space-x-2">
                         <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                        <span>Medium Priority</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
                         <span>Low Priority</span>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <div className="w-3 h-3 bg-blue-600 rounded-full"></div>
-                        <span>Team Member</span>
+                        <div className="w-3 h-3 bg-blue-600 rounded-full border border-white"></div>
+                        <span>Team Members</span>
                       </div>
                     </div>
                   </div>
@@ -538,48 +547,88 @@ export function AdminPortal() {
 
           {/* Team Tab */}
           <TabsContent value="team" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle>Team Management</CardTitle>
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-medium">Team Management</h3>
+              <Dialog>
+                <DialogTrigger asChild>
                   <Button>
                     <UserPlus className="w-4 h-4 mr-2" />
                     Add Member
                   </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {adminUsers.map((user) => (
-                    <Card key={user.id} className="p-4">
-                      <div className="flex items-center space-x-3">
-                        <div className="relative">
-                          <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center">
-                            <span className="text-lg font-medium">
-                              {user.name.split(' ').map(n => n[0]).join('')}
-                            </span>
-                          </div>
-                          <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${
-                            user.isOnline ? 'bg-green-500' : 'bg-gray-400'
-                          }`}></div>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Add Team Member</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label>Name</Label>
+                      <Input placeholder="Full name" />
+                    </div>
+                    <div>
+                      <Label>Email</Label>
+                      <Input type="email" placeholder="email@authority.gov" />
+                    </div>
+                    <div>
+                      <Label>Role</Label>
+                      <Select>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select role" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="admin">Admin</SelectItem>
+                          <SelectItem value="supervisor">Supervisor</SelectItem>
+                          <SelectItem value="field_officer">Field Officer</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Button className="w-full">Add Member</Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+
+            <div className="grid gap-4">
+              {adminUsers.map((user) => (
+                <Card key={user.id}>
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                          <span className="text-blue-600 font-medium">
+                            {user.name.split(' ').map(n => n[0]).join('')}
+                          </span>
                         </div>
-                        <div className="flex-1">
+                        <div>
                           <h4 className="font-medium">{user.name}</h4>
-                          <p className="text-sm text-gray-600">{user.role.replace('_', ' ')}</p>
-                          <p className="text-xs text-gray-500">{user.email}</p>
-                          <p className="text-xs text-gray-500">
-                            {user.isOnline ? 'Online' : 'Offline'}
-                          </p>
+                          <p className="text-sm text-gray-500">{user.email}</p>
+                          <div className="flex items-center space-x-2 mt-1">
+                            <Badge variant="outline">{user.role}</Badge>
+                            <div className="flex items-center space-x-1">
+                              <div className={`w-2 h-2 rounded-full ${user.isOnline ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                              <span className="text-xs text-gray-500">
+                                {user.isOnline ? 'Online' : 'Offline'}
+                              </span>
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    </Card>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                      <div className="flex items-center space-x-2">
+                        <Button variant="outline" size="sm">
+                          Edit
+                        </Button>
+                        <Button variant="outline" size="sm">
+                          <Settings className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </TabsContent>
         </Tabs>
-      </div>
+      </main>
     </div>
   );
 }
