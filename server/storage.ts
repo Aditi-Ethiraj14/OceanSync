@@ -17,6 +17,70 @@ export class MemStorage implements IStorage {
   constructor() {
     this.users = new Map();
     this.hazardReports = new Map();
+    
+    // Add some sample data for demonstration
+    this.addSampleData();
+  }
+
+  private addSampleData() {
+    // Add sample users
+    const sampleUsers = [
+      {
+        id: 'user-1',
+        username: 'MarineSafety',
+        email: 'marine@safety.com',
+        password: 'password',
+        createdAt: new Date(Date.now() - 86400000), // 1 day ago
+      },
+      {
+        id: 'user-2', 
+        username: 'CoastGuard',
+        email: 'coast@guard.com',
+        password: 'password',
+        createdAt: new Date(Date.now() - 86400000 * 2), // 2 days ago
+      }
+    ];
+
+    sampleUsers.forEach(user => this.users.set(user.id, user));
+
+    // Add sample hazard reports
+    const sampleReports = [
+      {
+        id: 'report-1',
+        userId: 'user-1',
+        description: 'Strong rip current observed near Marina Beach. Multiple swimmers have been rescued.',
+        latitude: 13.0542,
+        longitude: 80.2825,
+        location: '13.0542, 80.2825',
+        imageUrl: undefined,
+        audioUrl: undefined,
+        createdAt: new Date(Date.now() - 3600000), // 1 hour ago
+      },
+      {
+        id: 'report-2',
+        userId: 'user-2',
+        description: 'Oil spill detected in Bay of Bengal near Ennore Port. Immediate cleanup required.',
+        latitude: 13.2846,
+        longitude: 80.3371,
+        location: '13.2846, 80.3371',
+        imageUrl: undefined,
+        audioUrl: undefined,
+        createdAt: new Date(Date.now() - 7200000), // 2 hours ago
+      },
+      {
+        id: 'report-3',
+        userId: 'user-1',
+        description: 'Plastic debris and fishing nets washed up on Besant Nagar Beach.',
+        latitude: 13.0067,
+        longitude: 80.2669,
+        location: '13.0067, 80.2669',
+        imageUrl: undefined,
+        audioUrl: undefined,
+        createdAt: new Date(Date.now() - 10800000), // 3 hours ago
+      }
+    ];
+
+    sampleReports.forEach(report => this.hazardReports.set(report.id, report));
   }
 
   async getUser(id: string): Promise<User | undefined> {
