@@ -1,6 +1,13 @@
 import { useState } from "react";
-import { Bell, MapPin } from "lucide-react";
+import { Bell, MapPin, LogOut, FileText, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import { FeedTab } from "./feed-tab";
 import { ReportTab } from "./report-tab";
 import { DashboardTab } from "./dashboard-tab";
@@ -13,6 +20,7 @@ interface MainAppProps {
 
 export function MainApp({ user, onLogout }: MainAppProps) {
   const [activeTab, setActiveTab] = useState("feed");
+  const [showMyReports, setShowMyReports] = useState(false);
 
   const renderActiveTab = () => {
     switch (activeTab) {
@@ -50,11 +58,41 @@ export function MainApp({ user, onLogout }: MainAppProps) {
             <Button variant="ghost" size="sm" data-testid="button-notifications">
               <Bell className="h-5 w-5 text-muted-foreground" />
             </Button>
-            <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-              <span className="text-primary-foreground text-xs font-medium" data-testid="text-user-initials">
-                {user.username.slice(0, 2).toUpperCase()}
-              </span>
-            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="flex items-center space-x-1" data-testid="button-user-menu">
+                  <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                    <span className="text-primary-foreground text-xs font-medium" data-testid="text-user-initials">
+                      {user.username.slice(0, 2).toUpperCase()}
+                    </span>
+                  </div>
+                  <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem className="flex-col items-start">
+                  <div className="font-medium">{user.username}</div>
+                  <div className="text-xs text-muted-foreground">{user.email}</div>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  onClick={() => setShowMyReports(!showMyReports)}
+                  data-testid="button-my-reports"
+                >
+                  <FileText className="mr-2 h-4 w-4" />
+                  My Reports
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  onClick={onLogout}
+                  className="text-destructive focus:text-destructive"
+                  data-testid="button-logout"
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </header>
