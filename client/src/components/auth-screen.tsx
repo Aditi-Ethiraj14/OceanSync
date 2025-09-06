@@ -130,18 +130,30 @@ export function AuthScreen({ onLogin }: AuthScreenProps) {
               {isLoading ? "Loading..." : (isSignUp ? "Sign Up" : "Sign In")}
             </Button>
             
-            <div className="text-center">
-              <span className="text-muted-foreground text-sm">
-                {isSignUp ? "Already have an account? " : "New to OceanSync? "}
-              </span>
-              <button 
-                type="button"
-                className="text-primary text-sm font-medium"
-                onClick={() => setIsSignUp(!isSignUp)}
-                data-testid="button-toggle-auth"
-              >
-                {isSignUp ? "Sign In" : "Sign Up"}
-              </button>
+            <div className="text-center space-y-3">
+              <div>
+                <span className="text-muted-foreground text-sm">
+                  {isSignUp ? "Already have an account? " : "New to OceanSync? "}
+                </span>
+                <button 
+                  type="button"
+                  className="text-primary text-sm font-medium"
+                  onClick={() => setIsSignUp(!isSignUp)}
+                  data-testid="button-toggle-auth"
+                >
+                  {isSignUp ? "Sign In" : "Sign Up"}
+                </button>
+              </div>
+              <div className="pt-2 border-t border-gray-200">
+                <Button variant="outline" size="sm" asChild className="w-full">
+                  <a href="/admin" target="_blank" rel="noopener noreferrer">
+                    <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M18 8a6 6 0 01-7.743 5.743L10 14l-2.257-.257A6 6 0 1118 8zm-1.5 0a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM10 7a1 1 0 100 2 1 1 0 000-2z" clipRule="evenodd" />
+                    </svg>
+                    Marine Authority Portal
+                  </a>
+                </Button>
+              </div>
             </div>
           </form>
         </CardContent>

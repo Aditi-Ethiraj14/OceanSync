@@ -93,20 +93,23 @@ export function MainApp({ user, onLogout }: MainAppProps) {
             </div>
           </div>
           <div className="flex items-center space-x-2">
-            <Button variant="outline" size="sm" asChild>
-              <a href="/admin" target="_blank" rel="noopener noreferrer">
-                Admin Portal
-              </a>
-            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm">
-                  <MapPin className="mr-1 h-4 w-4" />
-                  <span className="truncate max-w-32">{currentLocation}</span>
+                  <div className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center mr-2">
+                    <span className="text-primary text-xs font-medium">
+                      {user.username.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                  <span className="truncate max-w-24">{user.username}</span>
                   <ChevronDown className="ml-1 h-3 w-3" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                <div className="px-2 py-2 border-b">
+                  <p className="text-sm font-medium">{user.username}</p>
+                  <p className="text-xs text-muted-foreground">{user.email}</p>
+                </div>
                 <DropdownMenuItem onClick={() => setShowMyReports(!showMyReports)}>
                   <FileText className="mr-2 h-4 w-4" />
                   {showMyReports ? 'Show All Reports' : 'Show My Reports'}
@@ -126,7 +129,7 @@ export function MainApp({ user, onLogout }: MainAppProps) {
                   Sign out
                 </DropdownMenuItem>
               </DropdownMenuContent>
-            </DropdownMenu>
+            </DropdownMenu></div>
           </div>
         </div>
       </header>
