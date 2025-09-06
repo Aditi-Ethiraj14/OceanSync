@@ -50,6 +50,33 @@ export function FeedTab() {
     refetch();
   };
 
+  const handleVerifyReport = (reportId: string) => {
+    setVerifiedReports(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(reportId)) {
+        newSet.delete(reportId);
+        toast({ title: "Verification removed", description: "Report verification removed." });
+      } else {
+        newSet.add(reportId);
+        toast({ title: "Report verified", description: "Thank you for verifying this report!" });
+      }
+      return newSet;
+    });
+  };
+
+  const handleShareReport = (reportId: string, description: string) => {
+    if (navigator.share) {
+      navigator.share({
+        title: 'Ocean Hazard Report',
+        text: description,
+        url: window.location.href,
+      });
+    } else {
+      navigator.clipboard.writeText(`Ocean Hazard: ${description} - ${window.location.href}`);
+      toast({ title: "Link copied", description: "Report link copied to clipboard!" });
+    }
+  };
+
   // Use mock data if no real data available
   const reports = data?.reports?.length > 0 ? data.reports : mockReports;
 
@@ -81,12 +108,12 @@ export function FeedTab() {
 
       {/* Reports List */}
       <div className="space-y-4">
-        {reports.map((report) => (
+        {reports.map((report: any) => (
           <div key={report.id} className="bg-card border border-border rounded-lg p-4 shadow-sm" data-testid={`card-report-${report.id}`}>
             <div className="flex items-start space-x-3">
               <div className="w-10 h-10 bg-secondary/20 rounded-full flex items-center justify-center flex-shrink-0">
                 <span className="text-secondary text-sm font-medium">
-                  {report.initials || report.author?.split(' ').map(n => n[0]).join('')}
+                  {report.initials || report.author?.split(' ').map((n: string) => n[0]).join('')}
                 </span>
               </div>
               <div className="flex-1">
