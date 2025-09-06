@@ -5,7 +5,8 @@ import { Label } from "@/components/ui/label";
 import { Camera, Mic, MapPin, Loader2 } from "lucide-react";
 import { useGeolocation } from "@/hooks/use-geolocation";
 import { useToast } from "@/hooks/use-toast";
-import { submitToN8nWebhook } from "@/lib/api";
+import { hazardReportApi, submitToN8nWebhook } from "@/lib/api";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface ReportTabProps {
   user: { id: string; username: string; email: string } | null;
@@ -24,6 +25,14 @@ export function ReportTab({ user }: ReportTabProps) {
   
   const { latitude, longitude, error: locationError, loading: locationLoading, refetch: refetchLocation } = useGeolocation();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const createReportMutation = useMutation({
+    mutationFn: hazardReportApi.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/hazard-reports'] });
+    },
+  });
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -109,24 +118,38 @@ export function ReportTab({ user }: ReportTabProps) {
     setIsSubmitting(true);
 
     try {
-      // Prepare FormData for n8n webhook
-      const formData = new FormData();
-      formData.append('description', description);
-      formData.append('latitude', latitude.toString());
-      formData.append('longitude', longitude.toString());
-      formData.append('userId', user.id);
-      formData.append('timestamp', new Date().toISOString());
-      
-      if (selectedImage) {
-        formData.append('image', selectedImage);
-      }
-      
-      if (selectedAudio) {
-        formData.append('voice', selectedAudio);
-      }
+      // First save to our backend
+      const reportData = {
+        description,
+        latitude,
+        longitude,
+        userId: user.id,
+        location: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`,
+      };
 
-      // Submit to n8n webhook
-      await submitToN8nWebhook(formData);
+      await createReportMutation.mutateAsync(reportData);
+
+      // Also try to submit to n8n webhook if available
+      try {
+        const formData = new FormData();
+        formData.append('description', description);
+        formData.append('latitude', latitude.toString());
+        formData.append('longitude', longitude.toString());
+        formData.append('userId', user.id);
+        formData.append('timestamp', new Date().toISOString());
+        
+        if (selectedImage) {
+          formData.append('image', selectedImage);
+        }
+        
+        if (selectedAudio) {
+          formData.append('voice', selectedAudio);
+        }
+
+        await submitToN8nWebhook(formData);
+      } catch (webhookError) {
+        console.log('N8n webhook not available, report saved locally');
+      }
 
       toast({
         title: "Report submitted successfully!",
