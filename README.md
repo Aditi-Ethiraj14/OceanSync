@@ -38,7 +38,7 @@
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/yourusername/OceanSync.git
+git clone https://github.com/yourusername/OceanSync.git](https://github.com/Aditi-Ethiraj14/OceanSync.git
 cd OceanSync
 ```
 2. Set up environment variables (Supabase keys, API keys, etc.)
