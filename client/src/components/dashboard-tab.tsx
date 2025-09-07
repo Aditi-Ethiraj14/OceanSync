@@ -1,21 +1,17 @@
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, RefreshCw } from "lucide-react";
+import { useState, useEffect } from "react";
 
-// Mock data for dashboard content
-const mockOceanNews = [
-  {
-    id: "1",
-    title: "New Marine Protected Area Established",
-    description: "California announces new protections for coastal waters...",
-    imageUrl: "https://images.unsplash.com/photo-1583212292454-1fe6229603b7?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&h=100",
-  },
-  {
-    id: "2",
-    title: "Fishing Season Updates",
-    description: "New regulations for recreational fishing take effect...",
-    imageUrl: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&h=100",
-  },
-];
+interface NewsItem {
+  article_id: string;
+  title: string;
+  description: string;
+  image_url?: string;
+  pubDate: string;
+  link: string;
+}
+
+const defaultImageUrl = "https://images.unsplash.com/photo-1583212292454-1fe6229603b7?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&h=100";
 
 const mockPrograms = [
   {
@@ -33,6 +29,52 @@ const mockPrograms = [
 ];
 
 export function DashboardTab() {
+  const [oceanNews, setOceanNews] = useState<NewsItem[]>([]);
+  const [isLoadingNews, setIsLoadingNews] = useState(true);
+  const [newsError, setNewsError] = useState<string | null>(null);
+
+  const fetchOceanNews = async () => {
+    setIsLoadingNews(true);
+    setNewsError(null);
+    
+    try {
+      const response = await fetch(
+        "https://newsdata.io/api/1/latest?apikey=pub_3703a7f32b5243d684f6a81f5fdf85db&q=ocean%20marine&language=en&size=3"
+      );
+      
+      if (!response.ok) {
+        throw new Error(`News API failed: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.results && Array.isArray(data.results)) {
+        setOceanNews(data.results.slice(0, 3)); // Limit to 3 articles
+      } else {
+        throw new Error("Invalid API response format");
+      }
+    } catch (error) {
+      console.error("Failed to fetch ocean news:", error);
+      setNewsError("Failed to load latest news");
+      // Use fallback mock data
+      setOceanNews([
+        {
+          article_id: "fallback-1",
+          title: "Ocean News Temporarily Unavailable",
+          description: "Please check back later for the latest ocean and marine news updates.",
+          pubDate: new Date().toISOString(),
+          link: "#",
+        },
+      ]);
+    } finally {
+      setIsLoadingNews(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchOceanNews();
+  }, []);
+
   return (
     <div className="p-4 space-y-4">
       <h2 className="text-lg font-semibold text-foreground mb-4">Ocean Dashboard</h2>
@@ -54,28 +96,68 @@ export function DashboardTab() {
 
       {/* Latest News */}
       <div className="bg-card border border-border rounded-lg p-4 shadow-sm">
-        <h3 className="font-medium text-foreground mb-3">Latest Ocean News</h3>
-        <div className="space-y-3">
-          {mockOceanNews.map((news) => (
-            <div key={news.id} className="flex space-x-3" data-testid={`news-item-${news.id}`}>
-              <div className="w-12 h-12 bg-muted rounded-lg flex-shrink-0">
-                <img 
-                  src={news.imageUrl} 
-                  alt={news.title}
-                  className="w-full h-full object-cover rounded-lg" 
-                />
-              </div>
-              <div className="flex-1">
-                <h4 className="text-sm font-medium text-foreground" data-testid={`text-news-title-${news.id}`}>
-                  {news.title}
-                </h4>
-                <p className="text-xs text-muted-foreground mt-1" data-testid={`text-news-description-${news.id}`}>
-                  {news.description}
-                </p>
-              </div>
-            </div>
-          ))}
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-medium text-foreground">Latest Ocean News</h3>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={fetchOceanNews}
+            disabled={isLoadingNews}
+            className="h-8 w-8 p-0"
+          >
+            <RefreshCw className={`h-4 w-4 ${isLoadingNews ? 'animate-spin' : ''}`} />
+          </Button>
         </div>
+        
+        {isLoadingNews ? (
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex space-x-3 animate-pulse">
+                <div className="w-12 h-12 bg-muted rounded-lg flex-shrink-0"></div>
+                <div className="flex-1">
+                  <div className="h-4 bg-muted rounded mb-2"></div>
+                  <div className="h-3 bg-muted rounded w-3/4"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {oceanNews.map((news) => (
+              <div key={news.article_id} className="flex space-x-3" data-testid={`news-item-${news.article_id}`}>
+                <div className="w-12 h-12 bg-muted rounded-lg flex-shrink-0 overflow-hidden">
+                  <img 
+                    src={news.image_url || defaultImageUrl} 
+                    alt={news.title}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = defaultImageUrl;
+                    }}
+                  />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h4 className="text-sm font-medium text-foreground line-clamp-2" data-testid={`text-news-title-${news.article_id}`}>
+                    {news.title}
+                  </h4>
+                  {news.description && (
+                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2" data-testid={`text-news-description-${news.article_id}`}>
+                      {news.description}
+                    </p>
+                  )}
+                  <div className="text-xs text-muted-foreground mt-1">
+                    {new Date(news.pubDate).toLocaleDateString()}
+                  </div>
+                </div>
+              </div>
+            ))}
+            {newsError && (
+              <div className="text-sm text-muted-foreground text-center py-2">
+                {newsError}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Government Schemes */}

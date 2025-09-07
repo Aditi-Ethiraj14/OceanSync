@@ -11,12 +11,13 @@ export interface RegisterData {
   password: string;
 }
 
+// Match DB schema (snake_case for URLs)
 export interface HazardReportData {
   description: string;
   latitude: number;
   longitude: number;
-  imageUrl?: string;
-  audioUrl?: string;
+  image_url?: string;   // snake_case
+  audio_url?: string;   // snake_case
   location?: string;
   userId: string;
 }
@@ -50,12 +51,16 @@ export const hazardReportApi = {
   },
 };
 
-export const submitToN8nWebhook = async (formData: FormData) => {
-  const webhookUrl = process.env.VITE_N8N_WEBHOOK_URL || "https://your-n8n-instance.com/webhook/ocean-hazard";
-  
+// Webhook should accept JSON payload with URLs, not FormData
+export const submitToN8nWebhook = async (payload: Record<string, any>) => {
+  const webhookUrl =
+    process.env.VITE_N8N_WEBHOOK_URL ||
+    "https://your-n8n-instance.com/webhook/ocean-hazard";
+
   const response = await fetch(webhookUrl, {
     method: "POST",
-    body: formData,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
   });
 
   if (!response.ok) {

@@ -158,16 +158,21 @@ export function FeedTab({ user, showMyReports = false }: FeedTabProps = {}) {
                 </p>
                 
                 {/* Image */}
-                {report.imageUrl && (
-                  <div className="mt-3 rounded-lg overflow-hidden">
-                    <img 
-                      src={report.imageUrl} 
-                      alt="Hazard report" 
-                      className="w-full h-32 object-cover"
-                      data-testid={`img-report-${report.id}`}
-                    />
-                  </div>
-                )}
+{(report.imageUrl || report.imageFile) && (
+  <div className="mt-3 rounded-lg overflow-hidden">
+    <img
+      src={
+        report.imageUrl 
+          ? report.imageUrl 
+          : URL.createObjectURL(report.imageFile)
+      }
+      alt="Hazard report"
+      className="w-full h-32 object-cover"
+      data-testid={`img-report-${report.id}`}
+    />
+  </div>
+)}
+
                 
                 {/* Audio player */}
                 {report.hasAudio && (

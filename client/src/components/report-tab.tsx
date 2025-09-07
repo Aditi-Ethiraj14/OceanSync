@@ -272,10 +272,18 @@ export function ReportTab({ user }: ReportTabProps) {
               Add Photo
             </Label>
             {selectedImage && (
-              <div className="mb-2 text-xs text-green-600">
-                ✓ Photo selected: {selectedImage.name}
-              </div>
-            )}
+  <div className="mb-2">
+    <p className="text-xs text-green-600 mb-1">
+      ✓ Photo selected: {selectedImage.name}
+    </p>
+    <img 
+      src={URL.createObjectURL(selectedImage)} 
+      alt="Selected preview" 
+      className="w-full h-40 object-cover rounded-md border" 
+    />
+  </div>
+)}
+
             <div className="space-y-2">
               <div 
                 className="border border-dashed border-border rounded-lg p-3 text-center hover:bg-accent/50 transition-colors cursor-pointer"
