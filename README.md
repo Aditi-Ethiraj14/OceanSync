@@ -61,3 +61,67 @@
 ```bash
 git clone https://github.com/yourusername/OceanSync.git
 cd OceanSync
+
+# 🌊 OceanSync — Sea Shore Incident Reporting Web App
+
+![Platform](https://img.shields.io/badge/Platform-Web-blue) 
+![Node.js](https://img.shields.io/badge/Node.js-14-green) 
+![Supabase](https://img.shields.io/badge/Database-Supabase-blue) 
+![HTML](https://img.shields.io/badge/Frontend-HTML-orange) 
+![CSS](https://img.shields.io/badge/Frontend-CSS-blue) 
+![JavaScript](https://img.shields.io/badge/Frontend-JS-yellow) 
+![VS Code](https://img.shields.io/badge/IDE-VS%20Code-blue) 
+![License](https://img.shields.io/badge/License-All%20Rights%20Reserved-red)
+
+*OceanSync* is a web application that allows users to *report incidents on the sea shore* in real-time, such as drowning cases, oil spills, or other emergencies. Users can capture images, add descriptions, and upload incidents, which are then directed to the relevant authorities via the *API server* for prompt action. Authorities respond *according to the priority* of the alerts.
+
+---
+
+## 🚀 Features
+
+<details>
+<summary>Click to expand</summary>
+
+- *Incident Reporting* — Capture images and add descriptions of incidents.  
+- *Real-Time Location Logging* — Automatically records the location of reported incidents.  
+- *User Dashboard* — Displays:
+  - Submitted reports  
+  - Map view of incidents  
+  - Nearby incidents for awareness  
+- *Authority Portal* — Authorities can access:
+  - Report details  
+  - Incident locations on a map  
+  - Manage and respond to incidents based on *priority*  
+- *API Server* — Handles report submissions, retrieval, and location data.  
+- *Ocean API Integration* — Provides educational and news articles related to the ocean.
+
+</details>
+
+---
+
+## 📊 How It Works
+
+<details>
+<summary>Click to expand</summary>
+
+1. Users capture an image of the incident and provide a description.  
+2. The system logs the *user’s location* automatically.  
+3. The incident is uploaded via the *API server* to the authority portal.  
+4. Users can view submitted reports, maps, and nearby incidents in their dashboard.  
+5. Authorities access detailed reports and respond according to the *priority of the alert*.  
+6. Ocean-related API provides news and articles for awareness.
+
+</details>
+
+---
+
+## 🛠 Installation
+
+<details>
+<summary>Click to expand</summary>
+
+1. Clone the repository:
+
+```bash
+git clone https://github.com/yourusername/OceanSync.git
+cd OceanSync
