@@ -15,8 +15,6 @@
 
 ## 🚀 Features
 
-<details>
-
 - *Incident Reporting* — Capture images and add descriptions of incidents.  
 - *Real-Time Location Logging* — Automatically records the location of reported incidents.  
 - *User Dashboard* — Displays:
@@ -30,14 +28,9 @@
 - *API Server* — Handles report submissions, retrieval, and location data.  
 - *Ocean API Integration* — Provides educational and news articles related to the ocean.
 
-</details>
-
 ---
 
 ## 📊 How It Works
-
-<details>
-<summary>Click to expand</summary>
 
 1. Users capture an image of the incident and provide a description.  
 2. The system logs the *user’s location* automatically.  
@@ -45,8 +38,6 @@
 4. Users can view submitted reports, maps, and nearby incidents in their dashboard.  
 5. Authorities access detailed reports and respond according to the *priority of the alert*.  
 6. Ocean-related API provides news and articles for awareness.
-
-</details>
 
 ---
 
@@ -60,4 +51,21 @@
 ```bash
 git clone https://github.com/yourusername/OceanSync.git
 cd OceanSync
+```
+2. Set up environment variables (Supabase keys, API keys, etc.)
+   ```bash
+   .env file
+4. Start the API server:
+```bash
+npm run server
+```
+4. Start the frontend:
+```bash
+npm start
+```
+5. Open your browser and navigate to:
+```bash
+http://localhost:3000
+
+
 
