@@ -35,9 +35,6 @@
 
 ## 🛠 Installation
 
-<details>
-<summary>Click to expand</summary>
-
 1. Clone the repository:
 
 ```bash
