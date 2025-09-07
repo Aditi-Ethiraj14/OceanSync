@@ -1,13 +1,5 @@
 # 🌊 OceanSync — Hazardous Incident Reporting App
 
-![Platform](https://img.shields.io/badge/Platform-Web-blue) 
-![Node.js](https://img.shields.io/badge/Node.js-14-green) 
-![Supabase](https://img.shields.io/badge/Database-Supabase-blue) 
-![HTML](https://img.shields.io/badge/Frontend-HTML-orange) 
-![CSS](https://img.shields.io/badge/Frontend-CSS-blue) 
-![JavaScript](https://img.shields.io/badge/Frontend-JS-yellow) 
-![VS Code](https://img.shields.io/badge/IDE-VS%20Code-blue) 
-![License](https://img.shields.io/badge/License-All%20Rights%20Reserved-red)
 
 *OceanSync* is an application that allows users to *report incidents on the sea shore* in real-time, such as drowning cases, oil spills, or other emergencies. Users can capture images, add descriptions, and upload incidents, which are then directed to the relevant authorities via the *API server* for prompt action. Authorities respond *according to the priority* of the alerts.
 
@@ -53,8 +45,9 @@ git clone https://github.com/yourusername/OceanSync.git
 cd OceanSync
 ```
 2. Set up environment variables (Supabase keys, API keys, etc.)
-   ```bash
-   .env file
+```bash
+.env file
+```
 4. Start the API server:
 ```bash
 npm run server
@@ -66,6 +59,4 @@ npm start
 5. Open your browser and navigate to:
 ```bash
 http://localhost:3000
-
-
 
